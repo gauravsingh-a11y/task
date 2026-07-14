@@ -3,56 +3,54 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from .serializers import UserRegistrationSerializer, LoginSerializer
+from .serializers import SignupSerializer, LoginSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
-class RegisterUserView(APIView):
+class SignupUserView(APIView):
 
     def post(self, request):
-        serializer = UserRegistrationSerializer(data=request.data)
+
+        serializer = SignupSerializer(data=request.data)
+
         if serializer.is_valid():
-            serializer.save()
+            user = serializer.save()
             return Response(
                 {
-                    "message": "User Registered Successfully",
-                    "user": serializer.data,
+                    "message": "User registered successfully",
+                    "user": {
+                        "id": user.id,
+                        "email": user.email,
+                        "firstname": user.firstname,
+                        "lastname": user.lastname,
+                        # "phone_number": user.phone_number,
+                    },
                 },
                 status=status.HTTP_201_CREATED,
             )
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginUserView(APIView):
-
     def post(self, request):
-
         serializer = LoginSerializer(data=request.data)
-
         if serializer.is_valid():
-
-            username = serializer.validated_data["username"]
-            password = serializer.validated_data["password"]
-
-            user = authenticate(
-                username=username,
-                password=password
-            )
-
-            if user:
-
-                refresh = RefreshToken.for_user(user)
-
-                return Response(
-                    {
-                        "message": "Login Successful",
-                        "access_token": str(refresh.access_token),
-                        
-                    },
-                    status=status.HTTP_200_OK,
-                )
-
+            user = serializer.validated_data["user"]
+            refresh = RefreshToken.for_user(user)
             return Response(
-                {"message": "Invalid Credentials"},
-                status=status.HTTP_401_UNAUTHORIZED,
+                {
+                    "message": "Login successful",
+                    "user": {
+                        "id": user.id,
+                        "email": user.email,
+                        "firstname": user.firstname,
+                        "lastname": user.lastname,
+                        # "phone_number": user.phone_number,
+                    },
+                    "tokens": {
+                        # "refresh": str(refresh),
+                        "access": str(refresh.access_token),
+                    },
+                },
+                status=status.HTTP_200_OK,
             )
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
